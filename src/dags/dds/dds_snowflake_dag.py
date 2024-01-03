@@ -14,6 +14,10 @@ from dds.restaurant_loader import RestaurantLoader
 from dds.schema_ddl import SchemaDdl
 from dds.timestamp_loader import TimestampLoader
 from dds.user_loader import UserLoader
+from dds.courier_loader import CourierLoader
+from dds.delivery_loader import DeliveryLoader
+from dds.fct_deliveriy_loader import FctDeliveryLoader
+
 
 log = logging.getLogger(__name__)
 
@@ -64,6 +68,21 @@ with DAG(
         fct_loader = FctProductsLoader(dwh_pg_connect, settings_repository)
         fct_loader.load_product_facts()
 
+    @task(task_id="dm_couriers_load")
+    def load_dm_couriers(ds=None, **kwargs):
+        courier_loader = CourierLoader(dwh_pg_connect, settings_repository)
+        courier_loader.load_couriers()
+
+    @task(task_id="dm_delivery_load")
+    def load_dm_delivery(ds=None, **kwargs):
+        delivery_loader = DeliveryLoader(dwh_pg_connect, settings_repository)
+        delivery_loader.load_delivery()
+
+    @task(task_id="fct_delivery_load")
+    def load_fct_delivery(ds=None, **kwargs):
+        fct_delivery_loader = FctDeliveryLoader(dwh_pg_connect, settings_repository)
+        fct_delivery_loader.load_delivery()
+
     init_schema = schema_init()
     dm_restaurants = load_dm_restaurants()
     dm_products = load_dm_products()
@@ -71,12 +90,19 @@ with DAG(
     dm_users = load_dm_users()
     dm_orders = load_dm_orders()
     fct_order_products = load_fct_order_products()
+    dm_couriers = load_dm_couriers()
+    dm_delivery = load_dm_delivery()
+    fct_delivery = load_fct_delivery()
+
 
     init_schema >> dm_restaurants  # type: ignore
     init_schema >> dm_timestamps  # type: ignore
     init_schema >> dm_users  # type: ignore
     init_schema >> dm_products  # type: ignore
     init_schema >> dm_orders  # type: ignore
+    init_schema >> dm_couriers  # type: ignore
+    init_schema >> dm_delivery  # type: ignore
+
     
     dm_restaurants >> dm_products  # type: ignore
     dm_restaurants >> dm_orders  # type: ignore
@@ -84,3 +110,5 @@ with DAG(
     dm_users >> dm_orders  # type: ignore
     dm_products >> fct_order_products  # type: ignore
     dm_orders >> fct_order_products  # type: ignore
+    dm_couriers >> fct_delivery
+    # dm_delivery >> fct_delivery

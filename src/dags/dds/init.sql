@@ -1,4 +1,4 @@
-ч# Задание 2. Проектирование снежинки.
+# Задание 2. Проектирование снежинки.
 
 ```SQL
 drop schema dds cascade;
@@ -73,7 +73,6 @@ CREATE TABLE dds.dm_orders(
     user_id int NOT NULL REFERENCES dds.dm_users(id)
 );
 
-
 CREATE TABLE dds.fct_product_sales (
     id int NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     product_id int NOT NULL REFERENCES dds.dm_products(id),
@@ -85,5 +84,45 @@ CREATE TABLE dds.fct_product_sales (
     bonus_grant numeric(19, 5) NOT NULL DEFAULT 0 CHECK (bonus_grant >= 0)
 );
 
+CREATE TABLE IF NOT EXISTS dds.dm_couriers(
+    id int NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    courier_id varchar NOT NULL UNIQUE,
+    courier_name varchar NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS dds.dm_deliveries(
+    id int NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	delivery_id varchar UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS dds.fct_deliveries(
+    order_id integer PRIMARY key,
+	delivery_id	integer,
+	courier_id integer,
+	order_ts timestamp,
+    delivery_ts timestamp,
+	address varchar,
+	rate  integer,
+	tip_sum numeric (14, 2),
+	total_sum numeric (14, 2),
+    CONSTRAINT fct_deliveries_order_id_fkey FOREIGN KEY (order_id) REFERENCES dds.dm_orders(id),
+    CONSTRAINT fct_deliveries_delivery_id_fkey FOREIGN KEY (delivery_id) REFERENCES dds.dm_deliveries(id),
+    CONSTRAINT fct_deliveries_courier_id_fkey FOREIGN KEY (courier_id) REFERENCES dds.dm_couriers(id)
+);
+
+CREATE TABLE cdm.dm_courier_ledger (
+    id int NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    courier_id int NOT NULL REFERENCES dds.dm_couriers(id),
+    courier_name varchar NOT NULL,
+    settlement_year int NOT NULL CHECK(settlement_year >= 2020 AND settlement_year < 2500),
+    settlement_month int NOT NULL CHECK(settlement_month >= 0 AND settlement_month <= 12),
+    orders_count int NOT NULL DEFAULT 0 CHECK (orders_count >= 0),
+    orders_total_sum numeric(19, 5) NOT NULL DEFAULT 0 CHECK (orders_total_sum >= 0),
+    rate_avg numeric(19, 5),
+    order_processing_fee numeric(19, 5) NOT NULL DEFAULT 0 CHECK (order_processing_fee >= 0),
+    courier_order_sum numeric(19, 5) NOT NULL DEFAULT 0 CHECK (courier_order_sum >= 0),
+    courier_tips_sum numeric(19, 5) NOT NULL DEFAULT 0 CHECK (courier_tips_sum >= 0),
+    courier_reward_sum numeric(19, 5) NOT NULL DEFAULT 0 CHECK (courier_reward_sum >= 0)
+);
 GRANT SELECT ON all tables IN SCHEMA dds TO sp5_de_tester;
 ```

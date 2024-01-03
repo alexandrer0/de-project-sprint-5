@@ -82,7 +82,6 @@ CREATE INDEX IF NOT EXISTS IDX_dm_orders__restaurant_id ON dds.dm_orders (restau
 CREATE INDEX IF NOT EXISTS IDX_dm_orders__timestamp_id ON dds.dm_orders (timestamp_id);
 CREATE INDEX IF NOT EXISTS IDX_dm_orders__user_id ON dds.dm_orders (user_id);
 
-
 CREATE TABLE IF NOT EXISTS dds.fct_product_sales (
     id int NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     product_id int NOT NULL REFERENCES dds.dm_products(id),
@@ -96,6 +95,31 @@ CREATE TABLE IF NOT EXISTS dds.fct_product_sales (
 CREATE INDEX IF NOT EXISTS IDX_fct_product_sales__product_id ON dds.fct_product_sales (product_id);
 CREATE UNIQUE INDEX IF NOT EXISTS IDX_fct_product_sales__order_id_product_id ON dds.fct_product_sales (order_id, product_id);
 
+CREATE TABLE IF NOT EXISTS dds.dm_couriers(
+    id int NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    courier_id varchar NOT NULL UNIQUE,
+    courier_name varchar NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS dds.dm_deliveries(
+    id int NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	delivery_id varchar UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS dds.fct_deliveries(
+    order_id integer PRIMARY key,
+	delivery_id	integer,
+	courier_id integer,
+	order_ts timestamp,
+    delivery_ts timestamp,
+	address varchar,
+	rate  integer,
+	tip_sum numeric (14, 2),
+	total_sum numeric (14, 2),
+    CONSTRAINT fct_deliveries_order_id_fkey FOREIGN KEY (order_id) REFERENCES dds.dm_orders(id),
+    CONSTRAINT fct_deliveries_delivery_id_fkey FOREIGN KEY (delivery_id) REFERENCES dds.dm_deliveries(id),
+    CONSTRAINT fct_deliveries_courier_id_fkey FOREIGN KEY (courier_id) REFERENCES dds.dm_couriers(id)
+);
 
 DO $do$ BEGIN IF EXISTS (
     SELECT
