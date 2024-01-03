@@ -96,13 +96,21 @@ class FctDeliveryLoader:
     def parse_delivery(self, delivery_raw: DeliveryJsonObj, order_id: int, delivery_id: int, courier_id: int) -> FctDeliveryDdsObj:
 
         delivery_json = json.loads(delivery_raw.object_value)
+        try:
+            order_ts = datetime.strptime(delivery_json['order_ts'], "%Y-%m-%d %H:%M:%S.%f")
+        except:
+            order_ts = datetime.strptime(delivery_json['order_ts'], "%Y-%m-%d %H:%M:%S")
+        try:
+            delivery_ts = datetime.strptime(delivery_json['delivery_ts'], "%Y-%m-%d %H:%M:%S.%f")
+        except:
+            delivery_ts = datetime.strptime(delivery_json['delivery_ts'], "%Y-%m-%d %H:%M:%S")
 
         t = FctDeliveryDdsObj(
             order_id=order_id,
             delivery_id=delivery_id,
             courier_id=courier_id,
-            order_ts=datetime.strptime(delivery_json['order_ts'], "%Y-%m-%d %H:%M:%S.%f"),
-            delivery_ts=datetime.strptime(delivery_json['delivery_ts'], "%Y-%m-%d %H:%M:%S.%f"),
+            order_ts=order_ts,
+            delivery_ts=delivery_ts,
             address=delivery_json['address'],
             rate=delivery_json['rate'],
             tip_sum=delivery_json['tip_sum'],
