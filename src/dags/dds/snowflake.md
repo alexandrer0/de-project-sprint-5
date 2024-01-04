@@ -1,6 +1,12 @@
-# Задание 2. Проектирование снежинки.
+# Проектирование снежинки.
 
 ```SQL
+drop schema dds cascade;
+create schema dds;
+DROP TABLE IF EXISTS cdm.dm_courier_ledger CASCADE;
+DROP TABLE IF EXISTS dds.fct_deliveries CASCADE;
+DROP TABLE IF EXISTS dds.dm_deliveries CASCADE;
+DROP TABLE IF EXISTS dds.dm_couriers CASCADE;
 DROP TABLE IF EXISTS dds.fct_product_sales CASCADE;
 DROP TABLE IF EXISTS dds.srv_wf_settings CASCADE;
 DROP TABLE IF EXISTS dds.dm_orders CASCADE;
@@ -9,13 +15,12 @@ DROP TABLE IF EXISTS dds.dm_restaurants CASCADE;
 DROP TABLE IF EXISTS dds.dm_users CASCADE;
 DROP TABLE IF EXISTS dds.dm_timestamps CASCADE;
 
-
 CREATE TABLE IF NOT EXISTS dds.srv_wf_settings(
     id int NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    workflow_key VARCHAR NOT NULL UNIQUE,
-    workflow_settings text NOT NULL
-);
 
+    workflow_key varchar UNIQUE,
+    workflow_settings text
+);
 
 CREATE TABLE IF NOT EXISTS dds.dm_restaurants(
     id int NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
@@ -28,21 +33,19 @@ CREATE TABLE IF NOT EXISTS dds.dm_restaurants(
 );
 CREATE INDEX IF NOT EXISTS IDX_dm_restaurants__restaurant_id_active_from ON dds.dm_restaurants (restaurant_id, active_from);
 
-
 CREATE TABLE IF NOT EXISTS dds.dm_products (
     id int NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    
+
     product_id varchar NOT NULL,
     product_name text NOT NULL,
     product_price numeric(19, 5) NOT NULL DEFAULT 0 CHECK (product_price >= 0),
 
     active_from timestamp NOT NULL,
     active_to timestamp NOT NULL,
-    
+
     restaurant_id int NOT NULL REFERENCES dds.dm_restaurants(id)
 );
 CREATE INDEX IF NOT EXISTS IDX_dm_products__restaurant_id ON dds.dm_products (restaurant_id);
-
 
 CREATE TABLE IF NOT EXISTS dds.dm_timestamps(
     id int NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
@@ -56,7 +59,6 @@ CREATE TABLE IF NOT EXISTS dds.dm_timestamps(
     date date NOT NULL
 );
 
-
 CREATE TABLE IF NOT EXISTS dds.dm_users(
     id int NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 
@@ -65,13 +67,12 @@ CREATE TABLE IF NOT EXISTS dds.dm_users(
     user_login varchar NOT NULL
 );
 
-
 CREATE TABLE IF NOT EXISTS dds.dm_orders(
     id int NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 
     order_key varchar NOT NULL UNIQUE,
     order_status varchar NOT NULL,
-    
+
     restaurant_id int NOT NULL REFERENCES dds.dm_restaurants(id),
     timestamp_id int NOT NULL REFERENCES dds.dm_timestamps(id),
     user_id int NOT NULL REFERENCES dds.dm_users(id)
@@ -79,7 +80,6 @@ CREATE TABLE IF NOT EXISTS dds.dm_orders(
 CREATE INDEX IF NOT EXISTS IDX_dm_orders__restaurant_id ON dds.dm_orders (restaurant_id);
 CREATE INDEX IF NOT EXISTS IDX_dm_orders__timestamp_id ON dds.dm_orders (timestamp_id);
 CREATE INDEX IF NOT EXISTS IDX_dm_orders__user_id ON dds.dm_orders (user_id);
-
 
 CREATE TABLE IF NOT EXISTS dds.fct_product_sales (
     id int NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
@@ -118,6 +118,21 @@ CREATE TABLE IF NOT EXISTS dds.fct_deliveries(
     CONSTRAINT fct_deliveries_order_id_fkey FOREIGN KEY (order_id) REFERENCES dds.dm_orders(id),
     CONSTRAINT fct_deliveries_delivery_id_fkey FOREIGN KEY (delivery_id) REFERENCES dds.dm_deliveries(id),
     CONSTRAINT fct_deliveries_courier_id_fkey FOREIGN KEY (courier_id) REFERENCES dds.dm_couriers(id)
+);
+
+CREATE TABLE IF NOT EXISTS cdm.dm_courier_ledger (
+    id int NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    courier_id varchar NOT NULL,
+    courier_name varchar NOT NULL,
+    settlement_year int NOT NULL CHECK(settlement_year >= 2020 AND settlement_year < 2500),
+    settlement_month int NOT NULL CHECK(settlement_month >= 0 AND settlement_month <= 12),
+    orders_count int NOT NULL DEFAULT 0 CHECK (orders_count >= 0),
+    orders_total_sum numeric(19, 5) NOT NULL DEFAULT 0 CHECK (orders_total_sum >= 0),
+    rate_avg numeric(19, 5),
+    order_processing_fee numeric(19, 5) NOT NULL DEFAULT 0 CHECK (order_processing_fee >= 0),
+    courier_order_sum numeric(19, 5) NOT NULL DEFAULT 0 CHECK (courier_order_sum >= 0),
+    courier_tips_sum numeric(19, 5) NOT NULL DEFAULT 0 CHECK (courier_tips_sum >= 0),
+    courier_reward_sum numeric(19, 5) NOT NULL DEFAULT 0 CHECK (courier_reward_sum >= 0)
 );
 
 GRANT SELECT ON all tables IN SCHEMA dds TO sp5_de_tester;

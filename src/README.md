@@ -39,3 +39,5 @@ cr.yandex/crp1r8pht0n0gl25aug1/de-pg-cr-af:latest
 	- `localhost:3000/airflow`
 - БД
 	- `jovyan:jovyan@localhost:15432/de`
+
+### P.S. Проект реализован на основе проекта упражнений 5-го спринта.

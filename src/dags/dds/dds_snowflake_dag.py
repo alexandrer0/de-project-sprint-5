@@ -5,6 +5,7 @@ from airflow import DAG
 from airflow.decorators import task
 from config_const import ConfigConst
 from lib import ConnectionBuilder
+from airflow.providers.postgres.operators.postgres import PostgresOperator
 
 from dds.dds_settings_repository import DdsEtlSettingsRepository
 from dds.fct_products_loader import FctProductsLoader
@@ -83,6 +84,12 @@ with DAG(
         fct_delivery_loader = FctDeliveryLoader(dwh_pg_connect, settings_repository)
         fct_delivery_loader.load_delivery()
 
+    update_cdm_courier_ledger = PostgresOperator(
+        task_id='update_cdm_courier_ledger',
+        postgres_conn_id=ConfigConst.PG_WAREHOUSE_CONNECTION,
+        sql="cdm.dm_courier_ledger.sql"
+    )
+
     init_schema = schema_init()
     dm_restaurants = load_dm_restaurants()
     dm_products = load_dm_products()
@@ -111,4 +118,5 @@ with DAG(
     dm_products >> fct_order_products  # type: ignore
     dm_orders >> fct_order_products  # type: ignore
     dm_couriers >> fct_delivery
-    # dm_delivery >> fct_delivery
+    dm_delivery >> fct_delivery
+    fct_delivery >> update_cdm_courier_ledger
